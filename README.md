@@ -62,7 +62,7 @@ docker run -p 5000:5000 -it \
 > when you put QueryWeaver behind HTTPS, so the session cookie is marked
 > `Secure`. See [Application environment](#application-environment).
 
-> Note: QueryWeaver supports multiple AI providers. You can use `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, or `AZURE_API_KEY`. See the [AI/LLM configuration](#aillm-configuration) section for details.
+> Note: QueryWeaver supports multiple AI providers. You can use `OPENAI_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, or `AZURE_API_KEY`. See the [AI/LLM configuration](#aillm-configuration) section for details.
 
 > For a full list of configuration options, consult `.env.example`.
 
@@ -529,18 +529,19 @@ APP_ENV=development
 
 QueryWeaver supports multiple AI providers. Set one API key and QueryWeaver auto-detects which provider to use.
 
-**Priority order:** Ollama > OpenAI > Gemini > Anthropic > Cohere > Azure (default)
+**Priority order:** Ollama > Groq > OpenAI > Gemini > Anthropic > Cohere > Azure (default)
 
 | Provider | API Key | Default Models |
 |----------|---------|----------------|
 | Ollama | `OLLAMA_MODEL` | `ollama/<your-model>`, `ollama/nomic-embed-text` |
+| Groq | `GROQ_API_KEY` | `groq/openai/gpt-oss-120b`, `voyage/voyage-3`* |
 | OpenAI | `OPENAI_API_KEY` | `openai/gpt-4.1`, `openai/text-embedding-ada-002` |
 | Google Gemini | `GEMINI_API_KEY` | `gemini/gemini-3-pro-preview`, `gemini/gemini-embedding-001` |
 | Anthropic | `ANTHROPIC_API_KEY` | `anthropic/claude-sonnet-4-5-20250929`, `voyage/voyage-3`* |
 | Cohere | `COHERE_API_KEY` | `cohere/command-a-03-2025`, `cohere/embed-v4.0` |
 | Azure OpenAI | `AZURE_API_KEY` | `azure/gpt-4.1`, `azure/text-embedding-ada-002` |
 
-\* Anthropic has no native embeddings. You must set `VOYAGE_API_KEY` or `EMBEDDING_MODEL` for embeddings, otherwise startup will fail with an error.
+\* Anthropic and Groq have no native embeddings. You must set `VOYAGE_API_KEY` or `EMBEDDING_MODEL` with that embedding provider's credentials, otherwise startup will fail with an error.
 
 **Optional: Override default models**
 
@@ -549,7 +550,24 @@ COMPLETION_MODEL=gemini/gemini-3-pro-preview
 EMBEDDING_MODEL=gemini/gemini-embedding-001
 ```
 
-Both must match your API key's provider.
+Each model needs its provider's credentials; completion and embedding providers can differ.
+
+For Groq completions with Gemini embeddings:
+
+```bash
+GROQ_API_KEY=your_groq_api_key
+COMPLETION_MODEL=groq/openai/gpt-oss-120b
+GEMINI_API_KEY=your_gemini_api_key
+EMBEDDING_MODEL=gemini/gemini-embedding-001
+```
+
+Groq takes precedence over other cloud API keys so an embedding provider's key does not
+change the completion provider. Unset `OLLAMA_MODEL` if it is set. `GROQ_MODEL` accepts
+a Groq model ID with or without the `groq/` prefix; `COMPLETION_MODEL` overrides it.
+See [LiteLLM's Groq integration](https://docs.litellm.ai/docs/providers/groq) for model naming.
+You can also select **Groq** in Settings for per-request completions; schema embeddings
+continue to use the server configuration. Graphiti conversation memory remains available
+only with the OpenAI and Azure server providers.
 
 #### Docker examples with AI configuration
 

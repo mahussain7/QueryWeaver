@@ -20,6 +20,7 @@ from api.core.db_resolver import resolve_db
 from api.core.errors import InvalidArgumentError
 from api.loaders.postgres_loader import PostgresLoader
 from api.loaders.mysql_loader import MySQLLoader
+from api.loaders.mssql_loader import MSSQLLoader
 from api.loaders.base_loader import BaseLoader
 from api.sql_utils import SQLIdentifierQuoter, DatabaseSpecificQuoter
 
@@ -127,6 +128,8 @@ def get_database_type_and_loader(
         return 'postgresql', PostgresLoader
     if db_url_lower.startswith('mysql://'):
         return 'mysql', MySQLLoader
+    if db_url_lower.startswith('mssql://') or db_url_lower.startswith('sqlserver://'):
+        return 'mssql', MSSQLLoader
     if db_url_lower.startswith('snowflake://'):
         if sdk_only:
             raise InvalidArgumentError(
@@ -141,7 +144,7 @@ def get_database_type_and_loader(
 
     if sdk_only:
         raise InvalidArgumentError(
-            "Invalid database URL format. Must be PostgreSQL or MySQL."
+            "Invalid database URL format. Must be PostgreSQL, MySQL, or Microsoft SQL Server."
         )
     # Server path keeps the historical default-to-PostgreSQL fallback.
     return 'postgresql', PostgresLoader
@@ -204,6 +207,8 @@ _DIALECT_BY_DB_TYPE = {
     "postgresql": "postgres",
     "postgres": "postgres",
     "mysql": "mysql",
+    "mssql": "tsql",
+    "sqlserver": "tsql",
     "snowflake": "snowflake",
 }
 

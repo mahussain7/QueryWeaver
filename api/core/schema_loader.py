@@ -32,7 +32,10 @@ def _step_start(steps_counter: int) -> dict[str, str]:
         "message": f"Step {steps_counter}: Starting database connection",
     }
 
-_KNOWN_DB_SCHEMES = ("postgresql://", "postgres://", "mysql://", "snowflake://")
+_KNOWN_DB_SCHEMES = (
+    "postgresql://", "postgres://", "mysql://", "mssql://", "sqlserver://",
+    "snowflake://",
+)
 
 
 def _step_detect_db_type(steps_counter: int, url: str) -> tuple[type[BaseLoader], dict[str, str]]:
@@ -196,7 +199,9 @@ async def load_database_sync(url: str, user_id: str, db=None):
     # an ImportError surface when the snowflake extra isn't installed.
     _, loader = get_database_type_and_loader(url, sdk_only=True)
     if loader is None:
-        raise InvalidArgumentError("Invalid database URL format. Must be PostgreSQL or MySQL.")
+        raise InvalidArgumentError(
+            "Invalid database URL format. Must be PostgreSQL, MySQL, or Microsoft SQL Server."
+        )
 
     success = False
 

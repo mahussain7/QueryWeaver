@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from litellm import completion
 
-from api.config import Config
+from api.config import Config, _with_prefix
 from api.auth.user_management import token_required
 from api.routes.tokens import UNAUTHORIZED_RESPONSE
 
@@ -33,7 +33,7 @@ async def validate_api_key(request: Request, data: ValidateKeyRequest):  # pylin
     """
     Validate an AI provider API key by making a simple test request.
     This endpoint does not store the key, it only validates it.
-    Supports: openai, google, anthropic
+    Supports: openai, gemini, anthropic, cohere, groq
     """
     api_key = data.api_key.strip()
     vendor = data.vendor.lower()
@@ -46,7 +46,7 @@ async def validate_api_key(request: Request, data: ValidateKeyRequest):  # pylin
         )
 
     # Validate vendor — only key-based vendors can be validated via API call
-    validatable_vendors = ("openai", "anthropic", "gemini", "cohere")
+    validatable_vendors = ("openai", "anthropic", "gemini", "cohere", "groq")
     if vendor not in validatable_vendors:
         allowed = ", ".join(validatable_vendors)
         return JSONResponse(
@@ -75,7 +75,7 @@ async def validate_api_key(request: Request, data: ValidateKeyRequest):  # pylin
 
     try:
         # Construct model name for LiteLLM (vendor/model format)
-        full_model_name = f"{vendor}/{model}"
+        full_model_name = _with_prefix(model, vendor)
 
         # Off-loop and time-bounded: this is a blocking provider call inside an
         # async route, so running it inline blocks the event loop — and with it

@@ -178,7 +178,7 @@ export class DatabaseService {
 
   /**
    * Connect to an external database using connection URL
-   * Format: postgresql://user:pass@host:port/database or mysql://user:pass@host:port/database
+   * Format: postgresql://, mysql://, or mssql:// user connection URL
    */
   static async connectDatabaseUrl(config: {
     type: string;
@@ -241,7 +241,11 @@ export class DatabaseService {
   }): Promise<GraphUploadResponse> {
     try {
       // Build connection URL from individual parameters
-      const protocol = config.type === 'mysql' ? 'mysql' : 'postgresql';
+      const protocol = config.type === 'mysql'
+        ? 'mysql'
+        : config.type === 'mssql'
+        ? 'mssql'
+        : 'postgresql';
       const connectionUrl = `${protocol}://${encodeURIComponent(config.username)}:${encodeURIComponent(config.password)}@${config.host}:${config.port}/${encodeURIComponent(config.database)}`;
       
       const response = await fetch(buildApiUrl('/database'), {

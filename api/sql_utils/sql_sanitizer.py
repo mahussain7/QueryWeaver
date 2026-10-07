@@ -24,6 +24,14 @@ class SQLIdentifierQuoter:
         'EXCEPT', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'CAST', 'ASC', 'DESC'
     }
 
+    @staticmethod
+    def is_quoted(identifier: str) -> bool:
+        """Return whether an identifier already has a supported quote pair."""
+        return any(
+            identifier.startswith(opening) and identifier.endswith(closing)
+            for opening, closing in (("\"", "\""), ("`", "`"), ("[", "]"))
+        )
+
     @classmethod
     def needs_quoting(cls, identifier: str) -> bool:
         """
@@ -36,8 +44,7 @@ class SQLIdentifierQuoter:
             True if the identifier needs quoting, False otherwise
         """
         # Already quoted
-        if (identifier.startswith('"') and identifier.endswith('"')) or \
-           (identifier.startswith('`') and identifier.endswith('`')):
+        if cls.is_quoted(identifier):
             return False
 
         # Check if it's a SQL keyword
@@ -62,10 +69,11 @@ class SQLIdentifierQuoter:
         identifier = identifier.strip()
 
         # Don't double-quote
-        if (identifier.startswith('"') and identifier.endswith('"')) or \
-           (identifier.startswith('`') and identifier.endswith('`')):
+        if SQLIdentifierQuoter.is_quoted(identifier):
             return identifier
 
+        if quote_char == '[':
+            return f'[{identifier}]'
         return f'{quote_char}{identifier}{quote_char}'
 
     @classmethod
@@ -97,8 +105,7 @@ class SQLIdentifierQuoter:
             for match in matches:
                 table_name = match.group(1).strip()
                 # Skip if it's already quoted or an alias
-                if not ((table_name.startswith('"') and table_name.endswith('"')) or
-                       (table_name.startswith('`') and table_name.endswith('`'))):
+                if not cls.is_quoted(table_name):
                     table_names.add(table_name)
 
         return table_names
@@ -167,5 +174,7 @@ class DatabaseSpecificQuoter:  # pylint: disable=too-few-public-methods
         """
         if db_type.lower() in ['mysql', 'mariadb']:
             return '`'
-        # PostgreSQL, SQLite, SQL Server (standard SQL) use double quotes
+        if db_type.lower() in ['mssql', 'sqlserver']:
+            return '['
+        # PostgreSQL and SQLite use double quotes
         return '"'

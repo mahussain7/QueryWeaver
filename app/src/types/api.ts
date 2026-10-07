@@ -65,7 +65,7 @@ export interface ChatRequest {
   history?: ConversationMessage[];
   customApiKey?: string;
   customModel?: string;
-  customVendor?: 'openai' | 'google' | 'anthropic';
+  customVendor?: 'openai' | 'google' | 'anthropic' | 'groq';
   use_user_rules?: boolean; // If true, backend fetches rules from database
   use_memory?: boolean;
 }

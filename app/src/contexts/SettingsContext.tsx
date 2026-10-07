@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DEFAULT_MODEL } from '@/utils/vendorConfig';
 
-export type AIVendor = 'openai' | 'google' | 'anthropic';
+export type AIVendor = 'openai' | 'google' | 'anthropic' | 'groq';
 
 const STORAGE_KEY = 'queryweaver_ai_settings';
 

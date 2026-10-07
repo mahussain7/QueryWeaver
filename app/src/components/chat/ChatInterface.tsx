@@ -414,9 +414,9 @@ const ChatInterface = ({
             } else {
               errorMsg = 'Required field cannot be empty.';
             }
-          } else if (errorMsg.includes('PostgreSQL query execution error:') || errorMsg.includes('MySQL query execution error:')) {
-            // Strip the "PostgreSQL/MySQL query execution error:" prefix
-            errorMsg = errorMsg.replace(/^(PostgreSQL|MySQL) query execution error:\s*/i, '');
+          } else if (errorMsg.includes('PostgreSQL query execution error:') || errorMsg.includes('MySQL query execution error:') || errorMsg.includes('Microsoft SQL Server query execution error:')) {
+            // Strip the database-specific query error prefix
+            errorMsg = errorMsg.replace(/^(PostgreSQL|MySQL|Microsoft SQL Server) query execution error:\s*/i, '');
             // Remove technical details after newline
             errorMsg = errorMsg.split('\n')[0];
           }

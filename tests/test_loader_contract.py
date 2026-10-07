@@ -16,10 +16,10 @@ import pytest
 # circular import (pipeline imports the loaders, the loaders import api.core).
 # Going through pipeline initialises the package in the right order, which also
 # makes the snowflake import below work.
-from api.core.pipeline import MySQLLoader, PostgresLoader
+from api.core.pipeline import MSSQLLoader, MySQLLoader, PostgresLoader
 from api.loaders.snowflake_loader import SnowflakeLoader
 
-LOADERS = [PostgresLoader, MySQLLoader, SnowflakeLoader]
+LOADERS = [PostgresLoader, MySQLLoader, MSSQLLoader, SnowflakeLoader]
 
 
 @pytest.mark.unit

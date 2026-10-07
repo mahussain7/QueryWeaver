@@ -183,6 +183,24 @@ class TestValidateApiKeyEndpoint:
         )
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("model", ["openai/gpt-oss-120b", "groq/openai/gpt-oss-120b"])
+    @patch('api.routes.settings.completion')
+    async def test_groq_vendor_accepted(self, mock_completion, mock_request, model):
+        mock_completion.return_value.choices = [MagicMock()]
+        data = ValidateKeyRequest(api_key="gsk_testkey", vendor="groq", model=model)
+
+        response = await validate_api_key.__wrapped__(mock_request, data)
+
+        assert response.status_code == 200
+        mock_completion.assert_called_once_with(
+            model="groq/openai/gpt-oss-120b",
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=1,
+            api_key="gsk_testkey",
+            **Config.llm_call_bounds(),
+        )
+
+    @pytest.mark.asyncio
     @patch('api.routes.settings.completion')
     async def test_no_choices_returns_401(self, mock_completion, mock_request):
         mock_response = MagicMock()

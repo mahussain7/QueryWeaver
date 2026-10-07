@@ -106,7 +106,7 @@ def _with_prefix(model: str, provider: str) -> str:
     return prefix + model.removeprefix(prefix)
 
 
-SUPPORTED_VENDORS = ("openai", "anthropic", "gemini", "azure", "ollama", "cohere")
+SUPPORTED_VENDORS = ("openai", "anthropic", "gemini", "azure", "ollama", "cohere", "groq")
 
 
 def _positive_env(name: str, default: str, cast=int):
@@ -150,7 +150,7 @@ class Config:  # pylint: disable=too-many-instance-attributes
     _user_embedding = os.getenv("EMBEDDING_MODEL", "")
 
     # Determine the provider and models based on available API keys
-    # Priority: Ollama > OpenAI > Gemini > Anthropic > Cohere > Azure (default)
+    # Priority: Ollama > Groq > OpenAI > Gemini > Anthropic > Cohere > Azure (default)
     if os.getenv("OLLAMA_MODEL"):
         LLM_PROVIDER = "ollama"
         AZURE_FLAG = False
@@ -158,6 +158,20 @@ class Config:  # pylint: disable=too-many-instance-attributes
             os.getenv("OLLAMA_MODEL"), "ollama")
         EMBEDDING_MODEL_NAME = _user_embedding or _with_prefix(
             os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text"), "ollama")
+    elif os.getenv("GROQ_API_KEY"):
+        LLM_PROVIDER = "groq"
+        AZURE_FLAG = False
+        COMPLETION_MODEL = _user_completion or _with_prefix(
+            os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"), "groq")
+        if _user_embedding:
+            EMBEDDING_MODEL_NAME = _user_embedding
+        elif os.getenv("VOYAGE_API_KEY"):
+            EMBEDDING_MODEL_NAME = "voyage/voyage-3"
+        else:
+            raise ValueError(
+                "GROQ_API_KEY is set, but Groq has no native embeddings. "
+                "Set EMBEDDING_MODEL and its provider credentials, or VOYAGE_API_KEY for embeddings."
+            )
     elif os.getenv("OPENAI_API_KEY"):
         LLM_PROVIDER = "openai"
         AZURE_FLAG = False
@@ -166,7 +180,7 @@ class Config:  # pylint: disable=too-many-instance-attributes
     elif os.getenv("GEMINI_API_KEY"):
         LLM_PROVIDER = "gemini"
         AZURE_FLAG = False
-        COMPLETION_MODEL = _user_completion or "gemini/gemini-3-pro-preview"
+        COMPLETION_MODEL = _user_completion or "gemini/gemini-3.1-pro-preview"
         EMBEDDING_MODEL_NAME = _user_embedding or "gemini/gemini-embedding-001"
     elif os.getenv("ANTHROPIC_API_KEY"):
         LLM_PROVIDER = "anthropic"

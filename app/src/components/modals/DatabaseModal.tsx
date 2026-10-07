@@ -134,17 +134,25 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
           builtUrl.searchParams.set('warehouse', warehouse);
           dbUrl = builtUrl.toString();
         } else {
-          const protocol = selectedDatabase === 'mysql' ? 'mysql' : 'postgresql';
+          const protocol = selectedDatabase === 'mysql'
+            ? 'mysql'
+            : selectedDatabase === 'mssql'
+            ? 'mssql'
+            : 'postgresql';
           const builtUrl = new URL(`${protocol}://${host}:${port}/${database}`);
           builtUrl.username = username;
           builtUrl.password = password;
 
-          // Append schema option for PostgreSQL if provided
-          if (selectedDatabase === 'postgresql' && schema.trim()) {
+          // Append a schema option for PostgreSQL or Microsoft SQL Server.
+          if ((selectedDatabase === 'postgresql' || selectedDatabase === 'mssql') && schema.trim()) {
             if (/[^a-zA-Z0-9_]/.test(schema.trim())) {
               throw new Error('Schema name can only contain letters, digits, and underscores');
             }
-            builtUrl.searchParams.set('options', `-csearch_path=${schema.trim()}`);
+            if (selectedDatabase === 'postgresql') {
+              builtUrl.searchParams.set('options', `-csearch_path=${schema.trim()}`);
+            } else {
+              builtUrl.searchParams.set('schema', schema.trim());
+            }
           }
 
           dbUrl = builtUrl.toString();
@@ -301,7 +309,7 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
             Connect to Database
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Connect to PostgreSQL, MySQL, or Snowflake database using a connection URL or manual entry.{" "}
+            Connect to PostgreSQL, MySQL, Microsoft SQL Server, or Snowflake using a connection URL or manual entry.{" "}
             <a
               href="https://www.falkordb.com/privacy-policy/"
               target="_blank"
@@ -336,6 +344,12 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
                   <div className="flex items-center">
                     <div className="w-4 h-4 bg-orange-500 rounded-sm mr-2"></div>
                     MySQL
+                  </div>
+                </SelectItem>
+                <SelectItem value="mssql" className="focus:bg-purple-500/20 focus:text-foreground" data-testid="mssql-option">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-red-500 rounded-sm mr-2"></div>
+                    Microsoft SQL Server
                   </div>
                 </SelectItem>
                 <SelectItem value="snowflake" className="focus:bg-purple-500/20 focus:text-foreground" data-testid="snowflake-option">
@@ -385,6 +399,8 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
                     ? 'postgresql://username:password@host:5432/database'
                     : selectedDatabase === 'mysql'
                     ? 'mysql://username:password@host:3306/database'
+                    : selectedDatabase === 'mssql'
+                    ? 'mssql://username:password@host:1433/database?schema=dbo'
                     : 'snowflake://username:password@account/database/schema?warehouse=warehouse_name'
                 }
                 value={connectionUrl}
@@ -551,7 +567,7 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
                     <Label htmlFor="port" className="text-sm font-medium">Port</Label>
                     <Input
                       id="port"
-                      placeholder={selectedDatabase === "postgresql" ? "5432" : "3306"}
+                      placeholder={selectedDatabase === "postgresql" ? "5432" : selectedDatabase === "mssql" ? "1433" : "3306"}
                       value={port}
                       onChange={(e) => setPort(e.target.value)}
                       className="bg-muted border-border focus-visible:ring-purple-500"
@@ -592,8 +608,8 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
                     />
                   </div>
 
-                  {/* Schema field - PostgreSQL only */}
-                  {selectedDatabase === 'postgresql' && (
+                  {/* Schema field - PostgreSQL and Microsoft SQL Server */}
+                  {(selectedDatabase === 'postgresql' || selectedDatabase === 'mssql') && (
                     <div className="space-y-2">
                       <Label htmlFor="schema" className="text-sm font-medium">
                         Schema <span className="text-muted-foreground font-normal">(optional)</span>
@@ -601,7 +617,7 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
                       <Input
                         id="schema"
                         data-testid="schema-input"
-                        placeholder="public"
+                        placeholder={selectedDatabase === 'mssql' ? 'dbo' : 'public'}
                         value={schema}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -618,7 +634,7 @@ const DatabaseModal = ({ open, onOpenChange }: DatabaseModalProps) => {
                         <p className="text-xs text-red-500">{schemaError}</p>
                       ) : (
                         <p className="text-xs text-muted-foreground">
-                          Leave empty to use the default &apos;public&apos; schema
+                          Leave empty to use the default &apos;{selectedDatabase === 'mssql' ? 'dbo' : 'public'}&apos; schema
                         </p>
                       )}
                     </div>
